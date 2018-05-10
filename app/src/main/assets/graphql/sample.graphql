@@ -1,0 +1,9 @@
+query PostsForAuthor($id: Int!) {
+    author(id: $id) {
+      firstName
+      posts {
+        title
+        votes
+      }
+    }
+  }
