@@ -18,9 +18,9 @@ val retrofit = Retrofit.Builder()
 
 Now when you build your API interface use it like this,
 ```
-    @POST("/")
-    @GraphQuery("filename")
-    fun getResponse(@Body query: QueryContainerBuilder): Call<T> 
+@POST("/")
+@GraphQuery("filename")
+fun getResponse(@Body query: QueryContainerBuilder): Call<T> 
 ```
 Note filename here refers to filename.graphql file which contains the actual GraphQL query 
 that should be placed in assets->graphql-> <<filename.graphql>>.
