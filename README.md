@@ -20,16 +20,14 @@ Now when you build your API interface use it like this,
 ```
     @POST("/")
     @GraphQuery("filename")
-    
-    /* Note filename here refers to filename.graphql file which contains the actual GraphQL query 
-       that should be placed in assets->graphql-> <<filename.graphql>> */
-    
-    fun getResponse(@Body query: QueryContainerBuilder): Call<T>
-    
-    /* QueryContainerBuilder is an in-built model class that allows to set variables
-       (if any) in the graphql query.
-       Hence it might also be null */
+    fun getResponse(@Body query: QueryContainerBuilder): Call<T> 
 ```
+Note filename here refers to filename.graphql file which contains the actual GraphQL query 
+that should be placed in assets->graphql-> <<filename.graphql>>.
+ 
+QueryContainerBuilder is an in-built model class that allows to set variables
+(if any) in the graphql query.Hence it might also be null 
+
 The variables in the query can be set like this,
 ```
 val queryContainer = QueryContainerBuilder()
