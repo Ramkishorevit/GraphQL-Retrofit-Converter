@@ -1,4 +1,4 @@
-package com.practo.fabric.app.central.utils.converter;
+package com.ramkishorevs.graphqlconverter.converter;
 
 import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
