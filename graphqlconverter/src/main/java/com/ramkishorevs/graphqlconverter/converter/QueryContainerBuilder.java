@@ -3,29 +3,25 @@ package com.ramkishorevs.graphqlconverter.converter;
 import android.os.Parcel;
 import android.os.Parcelable;
 
-import java.util.Map;
+import com.google.gson.annotations.SerializedName;
+
+import java.util.HashMap;
 import java.util.WeakHashMap;
 
-/**
- * Created by ramkishorevs
- *
- */
-
 public class QueryContainerBuilder implements Parcelable {
-
-    private QueryContainer queryContainer;
+    private QueryContainer mQueryContainer;
 
     public QueryContainerBuilder() {
-        queryContainer = new QueryContainer();
+        mQueryContainer = new QueryContainer();
     }
 
-    protected QueryContainerBuilder(Parcel in) {
-        queryContainer = in.readParcelable(QueryContainer.class.getClassLoader());
+    private QueryContainerBuilder(Parcel in) {
+        mQueryContainer = in.readParcelable(QueryContainer.class.getClassLoader());
     }
 
     @Override
     public void writeToParcel(Parcel dest, int flags) {
-        dest.writeParcelable(queryContainer, flags);
+        dest.writeParcelable(mQueryContainer, flags);
     }
 
     @Override
@@ -46,43 +42,44 @@ public class QueryContainerBuilder implements Parcelable {
     };
 
     public QueryContainerBuilder setQuery(String query) {
-        this.queryContainer.setQuery(query);
+        mQueryContainer.setQuery(query);
         return this;
     }
 
-    public QueryContainerBuilder putVariable(String key, Object value) {
-        queryContainer.putVariable(key, value);
+    public QueryContainerBuilder addVariable(String key, Object value) {
+        mQueryContainer.setVariable(key, value);
         return this;
     }
 
     public boolean containsVariable(String key) {
-        return queryContainer.containsVariable(key);
+        return mQueryContainer.containsVariable(key);
     }
 
 
     public QueryContainer build() {
-        return queryContainer;
+        return mQueryContainer;
     }
 
 
     public static class QueryContainer implements Parcelable {
-
-        private String query;
-        private Map<String, Object> variables;
+        @SerializedName("query")
+        private String mQuery;
+        @SerializedName("variables")
+        private HashMap<String, Object> mVariables;
 
         QueryContainer() {
-            variables = new WeakHashMap<>();
+            mVariables = new HashMap<>();
         }
 
         QueryContainer(Parcel in) {
-            query = in.readString();
-            variables = in.readHashMap(WeakHashMap.class.getClassLoader());
+            mQuery = in.readString();
+            mVariables = in.readHashMap(WeakHashMap.class.getClassLoader());
         }
 
         @Override
         public void writeToParcel(Parcel dest, int flags) {
-            dest.writeString(query);
-            dest.writeMap(variables);
+            dest.writeString(mQuery);
+            dest.writeMap(mVariables);
         }
 
         @Override
@@ -103,15 +100,15 @@ public class QueryContainerBuilder implements Parcelable {
         };
 
         protected void setQuery(String query) {
-            this.query = query;
+            mQuery = query;
         }
 
-        void putVariable(String key, Object value) {
-            variables.put(key, value);
+        void setVariable(String key, Object value) {
+            mVariables.put(key, value);
         }
 
         boolean containsVariable(String key) {
-            return variables != null && variables.containsKey(key);
+            return mVariables != null && mVariables.containsKey(key);
         }
     }
 }
