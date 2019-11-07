@@ -1,22 +1,14 @@
-package com.ramkishorevs.graphqlconverter.converter;
-
-/*
-* *
- * Created by ramkishorevs
- */
+package com.practo.fabric.app.central.utils.converter;
 
 import android.content.Context;
-import android.support.annotation.NonNull;
-
+import androidx.annotation.NonNull;
 import com.google.gson.Gson;
 import com.google.gson.GsonBuilder;
+import com.google.gson.JsonIOException;
 import com.google.gson.TypeAdapter;
 import com.google.gson.reflect.TypeToken;
 import com.google.gson.stream.JsonReader;
-
-import java.io.IOException;
-import java.lang.annotation.Annotation;
-import java.lang.reflect.Type;
+import com.google.gson.stream.JsonToken;
 
 import okhttp3.MediaType;
 import okhttp3.RequestBody;
@@ -24,12 +16,14 @@ import okhttp3.ResponseBody;
 import retrofit2.Converter;
 import retrofit2.Retrofit;
 
+import java.io.IOException;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Type;
 
 public class GraphQLConverter extends Converter.Factory {
-
     private static final MediaType MEDIA_TYPE = MediaType.parse("application/json; charset=UTF-8");
-    protected GraphQueryProcessor graphProcessor;
-    protected final Gson gson = new GsonBuilder()
+    private GraphQueryProcessor mGraphProcessor;
+    private final Gson mGson = new GsonBuilder()
             .enableComplexMapKeySerialization()
             .setLenient().create();
 
@@ -40,8 +34,8 @@ public class GraphQLConverter extends Converter.Factory {
      *
      * @param context Any valid application context
      */
-    protected GraphQLConverter(Context context) {
-        graphProcessor = new GraphQueryProcessor(context);
+    private GraphQLConverter(Context context) {
+        mGraphProcessor = new GraphQueryProcessor(context);
     }
 
     public static GraphQLConverter create(Context context) {
@@ -51,56 +45,57 @@ public class GraphQLConverter extends Converter.Factory {
     /**
      * Response body converter delegates logic processing to a child class that handles
      * wrapping and deserialization of the json response data.
-     * @see GraphResponseConverter
-     * <br/>
      *
      * @param annotations All the annotation applied to the requesting Call method
-     *                    @see retrofit2.Call
-     * @param retrofit The retrofit object representing the response
-     * @param type The generic type declared on the Call method
+     * @param retrofit    The retrofit object representing the response
+     * @param type        The generic type declared on the Call method
+     * @see GraphResponseConverter
+     * <br/>
+     * @see retrofit2.Call
      */
     @Override
     public Converter<ResponseBody, ?> responseBodyConverter(Type type, Annotation[] annotations, Retrofit retrofit) {
 
-        if (type instanceof ResponseBody) {
-            return super.responseBodyConverter(type, annotations, retrofit);
-        } else {
-            TypeAdapter<?> adapter = this.gson.getAdapter(TypeToken.get(type));
-            return new GraphResponseConverter(this.gson, adapter);
-        }
+        TypeAdapter<?> adapter = mGson.getAdapter(TypeToken.get(type));
+        return new GraphResponseConverter<>(mGson, adapter);
     }
 
     /**
      * Response body converter delegates logic processing to a child class that handles
      * wrapping and deserialization of the json response data.
-     * @see GraphRequestConverter
-     * <br/>
      *
      * @param parameterAnnotations All the annotation applied to request parameters
-     * @param methodAnnotations All the annotation applied to the requesting method
-     * @param retrofit The retrofit object representing the response
-     * @param type The type of the parameter of the request
+     * @param methodAnnotations    All the annotation applied to the requesting method
+     * @param retrofit             The retrofit object representing the response
+     * @param type                 The type of the parameter of the request
+     * @see GraphRequestConverter
+     * <br/>
      */
     @Override
-    public Converter<?, RequestBody> requestBodyConverter(Type type, Annotation[] parameterAnnotations, Annotation[] methodAnnotations, Retrofit retrofit) {
+    public Converter<?, RequestBody> requestBodyConverter(Type type, Annotation[] parameterAnnotations,
+                                                          Annotation[] methodAnnotations, Retrofit retrofit) {
         return new GraphRequestConverter(methodAnnotations);
     }
 
 
     protected class GraphResponseConverter<T> implements Converter<ResponseBody, T> {
-        private final Gson gson;
-        private final TypeAdapter<T> adapter;
+        private final Gson mGson;
+        private final TypeAdapter<T> mAdapter;
 
         GraphResponseConverter(Gson gson, TypeAdapter<T> adapter) {
-            this.gson = gson;
-            this.adapter = adapter;
+            mGson = gson;
+            mAdapter = adapter;
         }
 
         @Override
         public T convert(ResponseBody value) throws IOException {
-            JsonReader jsonReader = gson.newJsonReader(value.charStream());
+            JsonReader jsonReader = mGson.newJsonReader(value.charStream());
             try {
-                return adapter.read(jsonReader);
+                T result = mAdapter.read(jsonReader);
+                if (jsonReader.peek() != JsonToken.END_DOCUMENT) {
+                    throw new JsonIOException("JSON document was not fully consumed.");
+                }
+                return result;
             } finally {
                 value.close();
             }
@@ -112,15 +107,15 @@ public class GraphQLConverter extends Converter.Factory {
         protected Annotation[] methodAnnotations;
 
         protected GraphRequestConverter(Annotation[] methodAnnotations) {
-            this.methodAnnotations = methodAnnotations;
+            this.methodAnnotations = methodAnnotations.clone();
         }
 
         @Override
         public RequestBody convert(@NonNull QueryContainerBuilder containerBuilder) {
             QueryContainerBuilder.QueryContainer queryContainer = containerBuilder
-                    .setQuery(graphProcessor.getQuery(methodAnnotations))
+                    .setQuery(mGraphProcessor.getQuery(methodAnnotations))
                     .build();
-            String queryJson = gson.toJson(queryContainer);
+            String queryJson = mGson.toJson(queryContainer);
             return RequestBody.create(MEDIA_TYPE, queryJson.getBytes());
         }
     }
